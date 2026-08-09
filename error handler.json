@@ -1,0 +1,43 @@
+{
+  "name": "Gmail AI Draft Reply - Error Handler",
+  "nodes": [
+    {
+      "id": "5e71b1da-1598-40f6-a96f-dc9373ea3321",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "a76d7952-be40-4236-92d1-b48d03b1874c",
+      "name": "Send Error Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [224, 0],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "hassanarmyex1471@gmail.com",
+        "subject": "=n8n workflow failed: {{ $json.workflow.name }}",
+        "emailType": "text",
+        "message": "=A workflow execution failed.\n\nWorkflow: {{ $json.workflow.name }} (ID: {{ $json.workflow.id }})\nExecution ID: {{ $json.execution.id }}\nTime: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\n\nView execution: {{ $json.execution.url }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mQ16PJNEJvQkikN6",
+          "name": "Gmail account"
+        }
+      },
+      "webhookId": "3625fd22-e2c6-4aa9-96c7-6f23c4a3040a"
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [[{ "node": "Send Error Email", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {}
+}
+

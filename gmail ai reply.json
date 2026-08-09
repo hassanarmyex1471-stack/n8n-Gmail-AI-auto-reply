@@ -1,0 +1,102 @@
+{
+  "name": "Gmail AI Draft Reply",
+  "nodes": [
+    {
+      "id": "3b674fa6-1ef0-4039-bb7b-a7067d695afa",
+      "name": "New Email Received",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 112],
+      "parameters": {
+        "event": "messageReceived",
+        "simple": false,
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "filters": {
+          "readStatus": "unread"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mQ16PJNEJvQkikN6",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "e2402fc5-ca88-495b-9578-41aec922cd70",
+      "name": "Generate Reply",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [224, 112],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are writing a professional email reply on behalf of the account owner. Write a clear, courteous, and professional reply to the email below. Return only the body of the reply email, with no subject line and no placeholders.\n\nFrom: {{ $json.from }}\nSubject: {{ $json.subject }}\n\nEmail body:\n{{ $json.text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "You are a helpful assistant that drafts professional, concise, and polite email replies."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d930e472-230d-4106-9b1a-a9d7d41407c6",
+      "name": "Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [304, 336],
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview"
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SYwhgPj8GZ0u58zs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "id": "8ddad080-bfc4-4c27-88a4-19ed726d4e1d",
+      "name": "Create Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [576, 112],
+      "parameters": {
+        "resource": "draft",
+        "operation": "create",
+        "subject": "=Re: {{ $('New Email Received').item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {
+          "threadId": "={{ $('New Email Received').item.json.threadId }}",
+          "sendTo": "={{ $('New Email Received').item.json.from.extractEmail() }}"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "mQ16PJNEJvQkikN6",
+          "name": "Gmail account"
+        }
+      },
+      "webhookId": "a7e39669-f99b-459c-95c4-c89c67cef76a"
+    }
+  ],
+  "connections": {
+    "New Email Received": {
+      "main": [[{ "node": "Generate Reply", "type": "main", "index": 0 }]]
+    },
+    "Generate Reply": {
+      "main": [[{ "node": "Create Draft", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini": {
+      "ai_languageModel": [[{ "node": "Generate Reply", "type": "ai_languageModel", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "2fMi4EVRaNjinyqf"
+  }
+}
